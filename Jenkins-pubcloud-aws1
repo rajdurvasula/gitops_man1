@@ -106,7 +106,7 @@ pipeline {
                     ans_cfg = "${ans_cfg}" + "\nlog_path = ansible_log_${env.BUILD_TAG}"
                 }
                 // write ansible.cfg
-                fileOperations([fileCreateOperation(fileName: 'ansible.cfg', fileContent: "${ans_cfg}")])
+                fileOperations([fileCreateOperation(fileName: 'ansible/ansible.cfg', fileContent: "${ans_cfg}")])
                 script {
                     def manifest = readJSON file: "${params.manifest_file}"
                     try {
