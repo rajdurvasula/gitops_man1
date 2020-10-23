@@ -114,7 +114,7 @@ pipeline {
                             if (endpointType.os == "rhel7") {
                                 for (def playbookRef : endpointType.playbooks) {
                                     ansiblePlaybook(
-                                        playbook: "${playbookRef.file}",
+                                        playbook: "ansible/${playbookRef.file}",
                                         inventory: "pipeline_code/aws/rhel/inventory_hosts"
                                     )
                                 }
