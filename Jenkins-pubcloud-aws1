@@ -16,6 +16,10 @@ pipeline {
         string(name: 'manifest_file', defaultValue: 'jenkins-code/default_manifest.json', description: 'Deployment manifest')
     }
 
+    environment {
+        ANSIBLE_LOG_PATH = "ansible_log_${env.BUILD_TAG}"
+    }
+
     stages {
         stage('Checkout SCM') {
             steps {
@@ -101,13 +105,6 @@ pipeline {
         stage('Execute Playbooks') {
             steps {
                 script {
-                    ans_cfg = "[default]"
-                    ans_cfg = "${ans_cfg}" + "\nhost_key_checking = False"
-                    ans_cfg = "${ans_cfg}" + "\nlog_path = ansible_log_${env.BUILD_TAG}"
-                }
-                // write ansible.cfg
-                fileOperations([fileCreateOperation(fileName: 'ansible/ansible.cfg', fileContent: "${ans_cfg}")])
-                script {
                     def manifest = readJSON file: "${params.manifest_file}"
                     try {
                         for (def endpointType : manifest.ansible.endpoint_types) {
@@ -115,7 +112,8 @@ pipeline {
                                 for (def playbookRef : endpointType.playbooks) {
                                     ansiblePlaybook(
                                         playbook: "ansible/${playbookRef.file}",
-                                        inventory: "pipeline_code/aws/rhel/inventory_hosts"
+                                        inventory: "pipeline_code/aws/rhel/inventory_hosts",
+                                        disableHostKeyChecking: true
                                     )
                                 }
                             }
