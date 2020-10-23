@@ -44,6 +44,7 @@ pipeline {
                 script {
                     tfvars_txt = "key_path  = \"${env.WORKSPACE}\""
                     tfvars_txt = "${tfvars_txt}" + "\nprivate_key = \"${env.WORKSPACE}/rd_ssh_key.pem\""
+                    tfvars_txt = "${tfvars_txt}" + "\nos_type = \"${params.OS_TYPE}\""
                     if (params.OS_TYPE == "rhel7") {
                         tfvars_txt = "${tfvars_txt}" + "\nrhel7_instance = {"
                         tfvars_txt = "${tfvars_txt}" + "\nami = \"${params.AMI}\""
@@ -63,7 +64,7 @@ pipeline {
                     sh "set +x && \
                     cd ./pipeline_code/aws/rhel/ && \
                     /usr/bin/terraform init && \
-                    /usr/bin/terraform plan -out=test.plan -var-file=${env.WORKSPACE}/${params.TFVARS_FILE} --var os_type=${params.OS_TYPE}"
+                    /usr/bin/terraform plan -out=test.plan -var-file=${env.WORKSPACE}/${params.TFVARS_FILE}"
                 }
             }
         }
