@@ -1,0 +1,126 @@
+// Automated AWS
+SCM_URL = "https://github.com/rajdurvasula/gitops_man.git"
+def err = ""
+def ansible_build = ""
+def playbookFiles = ""
+def tfvars_text = ""
+def ans_cfg = ""
+
+pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'OS_TYPE', choices: ['win2016','rhel7','rhel8','sles15'], description: 'Target Operating System')
+        string(name: 'AMI', description: 'Amazon Image Id')
+        string(name: 'TFVARS_FILE', defaultValue: 'input.tfvars', description: 'Terraform Parameters file')
+        string(name: 'manifest_file', defaultValue: 'jenkins-code/default_manifest.json', description: 'Deployment manifest')
+    }
+
+    stages {
+        stage('Checkout SCM') {
+            steps {
+                cleanWs()
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[ name: 'rd_pr2' ]],
+                    userRemoteConfigs: [[
+                        url: "${SCM_URL}",
+                        credentialsId: "rd_git"
+                    ]]
+                ])
+            }
+        }
+
+        stage('Git Clone') {
+            steps {
+                dir('pipeline_code') {
+                    git branch: "rd_pr2",
+                    credentialsId: "rd_git",
+                    url: "https://github.com/rajdurvasula/gitops_man.git"
+                }
+                dir('ansible') {
+                    git branch: "rd_pr1",
+                    credentialsId: "rd_git",
+                    url: "https://github.com/rajdurvasula/rdmotd.git"
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                withCredentials([sshUserPrivateKey(
+                    credentialsId: 'rd_ssh',
+                    keyFileVariable: 'SSH_KEY'
+                )]) {
+                    sh "rm -f ${env.WORKSPACE}/rd_ssh_key.pem"
+                    sh "cp $SSH_KEY ${env.WORKSPACE}/rd_ssh_key.pem"
+                }
+                script {
+                    tfvars_txt = "key_path  = \"${env.WORKSPACE}\""
+                    tfvars_txt = "${tfvars_txt}" + "\nprivate_key = \"${env.WORKSPACE}/rd_ssh_key.pem\""
+                    if (params.OS_TYPE == "rhel7") {
+                        tfvars_txt = "${tfvars_txt}" + "\nrhel7_instance = {"
+                        tfvars_txt = "${tfvars_txt}" + "\nami = \"${params.AMI}\""
+                        tfvars_txt = "${tfvars_txt}" + "\nregion = \"us-west-1\""
+                        tfvars_txt = "${tfvars_txt}" + "\nansible_user = \"ec2-user\""
+                        tfvars_txt = "${tfvars_txt}" + "\n}"
+                    }
+                }            
+                // write tfvars
+                fileOperations([fileCreateOperation(fileName: params.TFVARS_FILE, fileContent: "${tfvars_txt}")])
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'rd_mcms',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    sh "set +x && \
+                    cd ./pipeline_code/aws/rhel/ && \
+                    /usr/bin/terraform init && \
+                    /usr/bin/terraform plan -out=test.plan -var-file=${env.WORKSPACE}/${params.TFVARS_FILE} --var os_type=${params.OS_TYPE}"
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'rd_mcms',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    sh "set +x && \
+                    cd ./pipeline_code/aws/rhel/ && \
+                    /usr/bin/terraform apply -auto-approve test.plan"
+                }
+            }
+        }
+
+        stage('Execute Playbooks') {
+            steps {
+                script {
+                    ans_cfg = "[default]"
+                    ans_cfg = "${ans_cfg}" + "\nhost_key_checking = False"
+                    ans_cfg = "${ans_cfg}" + "\nlog_path = ansible_log_${env.BUILD_TAG}"
+                }
+                // write ansible.cfg
+                fileOperations([fileCreateOperation(fileName: 'ansible.cfg', fileContent: "${ans_cfg}")])
+                script {
+                    def manifest = readJSON file: "${params.manifest_file}"
+                    try {
+                        for (def playbookRef : manifest.ansible.playbooks) {
+                            ansiblePlaybook(
+                                playbook: "${playbookRef.file}",
+                                inventory: "pipeline_code/aws/rhel/inventory_hosts"
+                            )
+                        }
+                    } catch (hudson.AbortException ae) {
+                        err = ae.getMessage()
+                        ansible_build = "BUILD_FAILURE"
+                    }
+                }
+            }
+        }
+    }
+}

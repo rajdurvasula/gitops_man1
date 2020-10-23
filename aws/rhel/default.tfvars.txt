@@ -1,0 +1,27 @@
+private_key = /tform_ws/ibm-rd-coe-kp1
+
+rhel7_instabce = {
+    region = "us-west-1"
+    ami = "ami-07d8d14365439bc6e"
+    ansible_user = "ec2-user"
+}
+
+rhel8_instance = {
+    region = "us-west-1"
+    ami = "ami-090b3d236da86de88"
+    ansible_user = "ec2-user"
+}
+
+sles15_instance = {
+    region = "us-west-1"
+    ami = "ami-0ac3dbf3917611d92"
+    ansible_user = "ec2-user"
+}
+
+win2016_instance = {
+    region = "us-west-1"
+    ami = "ami-03a3dfe44d6af440c"
+    ansible_user = "Administrator"
+    ansible_password = ""
+}
+

@@ -1,0 +1,39 @@
+{
+    "name": "manifest.rhel7",
+    "infrastructure": {
+        "provider": "aws",
+        "credentialsId": "rd_ibm_aws",
+        "endpoint_types": [
+            {
+                "count": 2,
+                "os": "rhel7",
+                "user": "ec2-user",
+                "credentialsId": "rd_ssh_key"
+            }
+        ]
+    },
+    "terraform": {
+        "aws": {
+            "rhel7": {
+                "ami": "ami-07d8d14365439bc6e",
+                "path": "aws/rhel",
+                "file": "aws/rhel/resources.tf"
+            }
+        }
+    },
+    "ansible": {
+        "endpoint_types": [
+            {
+                "inventory_file": "inventory_hosts",
+                "playbooks": [
+                    {
+                        "file": "OneLinuxAE.yml"
+                    },
+                    {
+                        "file": "TwoLinuxAE.yml"
+                    }
+                ]
+            }
+        ] 
+    }
+}
