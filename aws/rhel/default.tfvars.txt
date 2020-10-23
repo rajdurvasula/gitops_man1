@@ -1,4 +1,5 @@
 private_key = /tform_ws/ibm-rd-coe-kp1
+os_type = "rhel7"
 
 rhel7_instabce = {
     region = "us-west-1"
