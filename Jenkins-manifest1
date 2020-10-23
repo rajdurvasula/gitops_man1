@@ -1,6 +1,6 @@
 // Manifest Pipeline
 
-SCM_URL = "https://github.com/rajdurvasula/gitops_man.git"
+SCM_URL = "https://github.com/rajdurvasula/gitops_man1.git"
 
 pipeline {
     agent any
@@ -17,7 +17,7 @@ pipeline {
                 cleanWs()
                 checkout([
                     $class: 'GitSCM',
-                    branches: [[ name: 'rd_pr2' ]],
+                    branches: [[ name: 'rd_pr1' ]],
                     userRemoteConfigs: [[
                         url: "${SCM_URL}",
                         credentialsId: "rd_git"

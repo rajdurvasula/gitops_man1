@@ -1,5 +1,5 @@
 // Automated AWS
-SCM_URL = "https://github.com/rajdurvasula/gitops_man.git"
+SCM_URL = "https://github.com/rajdurvasula/gitops_man1.git"
 def err = ""
 def ansible_build = ""
 def playbookFiles = ""
@@ -17,26 +17,12 @@ pipeline {
     }
 
     stages {
-        stage('Checkout SCM') {
-            steps {
-                cleanWs()
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[ name: 'rd_pr2' ]],
-                    userRemoteConfigs: [[
-                        url: "${SCM_URL}",
-                        credentialsId: "rd_git"
-                    ]]
-                ])
-            }
-        }
-
         stage('Git Clone') {
             steps {
                 dir('pipeline_code') {
                     git branch: "rd_pr2",
                     credentialsId: "rd_git",
-                    url: "https://github.com/rajdurvasula/gitops_man.git"
+                    url: "https://github.com/rajdurvasula/gitops_man1.git"
                 }
                 dir('ansible') {
                     git branch: "rd_pr1",
