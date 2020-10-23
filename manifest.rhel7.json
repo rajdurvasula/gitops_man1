@@ -24,6 +24,7 @@
     "ansible": {
         "endpoint_types": [
             {
+                "os": "rhel7",
                 "inventory_file": "inventory_hosts",
                 "playbooks": [
                     {

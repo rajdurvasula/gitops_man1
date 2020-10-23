@@ -110,11 +110,15 @@ pipeline {
                 script {
                     def manifest = readJSON file: "${params.manifest_file}"
                     try {
-                        for (def playbookRef : manifest.ansible.playbooks) {
-                            ansiblePlaybook(
-                                playbook: "${playbookRef.file}",
-                                inventory: "pipeline_code/aws/rhel/inventory_hosts"
-                            )
+                        for (def endpointType : manifest.ansible.endpoint_types) {
+                            if (endpointType.os == "rhel7") {
+                                for (def playbookRef : endpointType.playbooks) {
+                                    ansiblePlaybook(
+                                        playbook: "${playbookRef.file}",
+                                        inventory: "pipeline_code/aws/rhel/inventory_hosts"
+                                    )
+                                }
+                            }
                         }
                     } catch (hudson.AbortException ae) {
                         err = ae.getMessage()
