@@ -17,7 +17,8 @@ pipeline {
     }
 
     environment {
-        ANSIBLE_LOG_PATH = "ansible_log_${env.BUILD_TAG}"
+        ANSIBLE_LOG_PATH="ansible_log_${env.BUILD_TAG}"
+        ANSIBLE_HOST_KEY_CHECKING=False
     }
 
     stages {
